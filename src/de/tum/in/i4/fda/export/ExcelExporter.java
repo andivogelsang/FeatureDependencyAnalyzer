@@ -2,20 +2,14 @@ package de.tum.in.i4.fda.export;
 
 import java.io.FileOutputStream;
 import java.util.Collection;
-import java.util.Dictionary;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections15.map.HashedMap;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import cern.colt.Arrays;
 import de.tum.in.i4.fda.FAAnalyzer;
 import de.tum.in.i4.fda.model.Component;
 import de.tum.in.i4.fda.model.Feature;

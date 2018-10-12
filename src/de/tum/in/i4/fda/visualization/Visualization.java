@@ -7,20 +7,17 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 
-import de.tum.in.i4.fda.model.FA;
+import de.tum.in.i4.fda.FAAnalyzer;
+import de.tum.in.i4.fda.model.Component;
 import de.tum.in.i4.fda.model.Feature;
 import de.tum.in.i4.fda.model.FeatureDependency;
 import de.tum.in.i4.fda.model.FirstOrderFeatureDependency;
-import de.tum.in.i4.fda.FAAnalyzer;
-import de.tum.in.i4.fda.model.Component;
-
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-
 import edu.uci.ics.jung.algorithms.cluster.VoltageClusterer;
 import edu.uci.ics.jung.algorithms.scoring.PageRank;
 import edu.uci.ics.jung.graph.DirectedSparseMultigraph;

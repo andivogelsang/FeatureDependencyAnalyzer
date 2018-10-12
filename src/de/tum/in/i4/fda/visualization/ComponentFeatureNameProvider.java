@@ -3,7 +3,6 @@ package de.tum.in.i4.fda.visualization;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jgrapht.ext.VertexNameProvider;
 
 import de.tum.in.i4.fda.FAAnalyzer;

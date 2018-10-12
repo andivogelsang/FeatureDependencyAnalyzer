@@ -1,20 +1,15 @@
 package de.tum.in.i4.fda;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
 
-import cern.colt.Arrays;
 import de.tum.in.i4.fda.export.ExcelExporter;
 import de.tum.in.i4.fda.model.FA;
 import de.tum.in.i4.fda.parser.BMWParser;
 import de.tum.in.i4.fda.parser.BMW_AIDA_Parser;
 import de.tum.in.i4.fda.parser.MANPhevosParser;
-import de.tum.in.i4.fda.visualization.Visualization;
-import hep.aida.bin.StaticBin1D;
 
 public class FeatureDependencyAnalyzer {
   
@@ -92,8 +87,8 @@ public class FeatureDependencyAnalyzer {
 	private static void parseInputFile(FA fa, FAAnalyzer analyzer) {
 		//Parsing input file 
 		//BMWParser parser = new BMWParser(fa);
-		//MANPhevosParser parser = new MANPhevosParser(fa);
-	  BMW_AIDA_Parser parser = new BMW_AIDA_Parser(fa);
+		MANPhevosParser parser = new MANPhevosParser(fa);
+	  //BMW_AIDA_Parser parser = new BMW_AIDA_Parser(fa);
 		parser.parse();
 		
 		LOGGER.info("Number of Features: " + analyzer.numberOfFeatures());

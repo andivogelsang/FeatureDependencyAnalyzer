@@ -1,0 +1,5 @@
+/bin/
+/.checkstyle
+/.pmd
+/.project
+/target/
