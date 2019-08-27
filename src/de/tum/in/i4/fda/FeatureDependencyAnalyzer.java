@@ -32,8 +32,11 @@ public class FeatureDependencyAnalyzer {
 		//Preprocess data
 		analyzer.removeEmptyFA();
 		
+		
 		//Perform some analysis
 		performFeatureDependencyAnalysis(analyzer,exporter);
+		
+		performComponentDistributionAnalysis(analyzer,exporter);
 		
 		//performFIOrderAnalysis(analyzer,exporter);
 
@@ -41,7 +44,17 @@ public class FeatureDependencyAnalyzer {
 
 	}
 
-	private static void performFIOrderAnalysis(FAAnalyzer analyzer, ExcelExporter exporter) {
+  private static void performComponentDistributionAnalysis(FAAnalyzer analyzer,
+      ExcelExporter exporter) {
+	  analyzer.computePositionInFeature();
+	  
+	  //analyzer.printPositionData();
+	  
+	  exporter.exportComponentDistributionAnalysis();
+    
+  }
+
+  private static void performFIOrderAnalysis(FAAnalyzer analyzer, ExcelExporter exporter) {
 		//analyzer.computeSimpleHighOrderDependencies();
 		analyzer.computeHighOrderDependencies();
 		
@@ -86,8 +99,8 @@ public class FeatureDependencyAnalyzer {
 
 	private static void parseInputFile(FA fa, FAAnalyzer analyzer) {
 		//Parsing input file 
-		//BMWParser parser = new BMWParser(fa);
-		MANPhevosParser parser = new MANPhevosParser(fa);
+		BMWParser parser = new BMWParser(fa);
+		//MANPhevosParser parser = new MANPhevosParser(fa);
 	  //BMW_AIDA_Parser parser = new BMW_AIDA_Parser(fa);
 		parser.parse();
 		

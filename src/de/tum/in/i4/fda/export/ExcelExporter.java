@@ -6,6 +6,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -24,6 +27,7 @@ public class ExcelExporter {
   private Workbook technicalDepthWb;
   private Workbook treeMapWb;
   private Workbook featureHierarchyWb;
+  private Workbook componentDistributionWb;
   private Sheet edgeSheet;
   private Sheet nodeSheet;
   private Sheet distributionSheet;
@@ -31,10 +35,12 @@ public class ExcelExporter {
   private Sheet tdSheet;
   private Sheet treeMapSheet;
   private Sheet featureHierarchySheet;
+  private Sheet componentPositionSheet;
   private final String dependencyWbPath = "output/adjMatrix.xlsx";
   private final String tdWbPath = "output/technicalDepthAnalysis.xlsx";
   private final String treeMapWbPath = "output/treeMap.xlsx";
   private final String featureHierarchyWbPath = "output/featureHierarchy.xlsx";
+  private final String ComponentDistributionWbPath = "output/componentPositions.xlsx";
 
   public ExcelExporter(FAAnalyzer analyzer) {
     this.analyzer = analyzer;
@@ -46,6 +52,23 @@ public class ExcelExporter {
     initializeTreeMapWb();
 
     initializeFeatureHierarchyWb();
+
+    initializeComponentDistributionWb();
+
+  }
+
+  private void initializeComponentDistributionWb() {
+
+    componentDistributionWb = new XSSFWorkbook();
+
+    componentPositionSheet = componentDistributionWb.createSheet("Component Positions");
+    componentPositionSheet.createRow(0);
+    componentPositionSheet.getRow(0).createCell(0).setCellValue("Feature");
+    componentPositionSheet.getRow(0).createCell(1).setCellValue("Component");
+    componentPositionSheet.getRow(0).createCell(2).setCellValue("Length to Input");
+    componentPositionSheet.getRow(0).createCell(3).setCellValue("Length to Output");
+    componentPositionSheet.getRow(0).createCell(4).setCellValue("Position in Feature");
+    componentPositionSheet.getRow(0).createCell(5).setCellValue("Number of Dependencies");
   }
 
   private void initializeTreeMapWb() {
@@ -250,12 +273,12 @@ public class ExcelExporter {
     Collection<String> hierarchyTuples = new HashSet<String>();
     for (Feature f : analyzer.fa.features) {
       String[] nodes = f.fqn.split("\\.");
-      hierarchyTuples.add("origin@"+ nodes[0]);
+      hierarchyTuples.add("origin@" + nodes[0]);
       for (int i = 1; i < nodes.length; i++) {
-        hierarchyTuples.add(nodes[i - 1]+ "@" +nodes[i]);
+        hierarchyTuples.add(nodes[i - 1] + "@" + nodes[i]);
       }
-    }    
-    
+    }
+
     // export the graph
     int fhSheetRow = -1;
     FileOutputStream fileOut;
@@ -270,6 +293,42 @@ public class ExcelExporter {
     try {
       fileOut = new FileOutputStream(featureHierarchyWbPath);
       featureHierarchyWb.write(fileOut);
+      fileOut.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+
+  }
+
+  public void exportComponentDistributionAnalysis() {
+    int componentPositionSheetRow = -1;
+    FileOutputStream fileOut;
+    CellStyle percentStyle = componentDistributionWb.createCellStyle();
+    percentStyle.setDataFormat(componentDistributionWb.createDataFormat().getFormat("0.0%"));
+
+    for (Feature f : analyzer.fa.features) {
+      for (Component c : f.getComponents()) {
+        componentPositionSheetRow = componentPositionSheet.getLastRowNum() + 1;
+        componentPositionSheet.createRow(componentPositionSheetRow);
+        componentPositionSheet.getRow(componentPositionSheetRow).createCell(0).setCellValue(f.name);
+        componentPositionSheet.getRow(componentPositionSheetRow).createCell(1).setCellValue(c.name);
+        componentPositionSheet.getRow(componentPositionSheetRow).createCell(2)
+            .setCellValue(c.getInputPositionInFeature(f));
+        componentPositionSheet.getRow(componentPositionSheetRow).createCell(3)
+            .setCellValue(c.getOutputPositionInFeature(f));
+        double featureLength = c.getInputPositionInFeature(f) + c.getOutputPositionInFeature(f);
+        double positionInFeature = featureLength == 0 ? 0.5
+            : c.getInputPositionInFeature(f) / featureLength;
+        Cell cell = componentPositionSheet.getRow(componentPositionSheetRow).createCell(4);
+        cell.setCellValue(positionInFeature);
+        cell.setCellStyle(percentStyle);
+        componentPositionSheet.getRow(componentPositionSheetRow).createCell(5).setCellValue(analyzer.getNumberOfDependencies(c));
+      }
+    }
+
+    try {
+      fileOut = new FileOutputStream(ComponentDistributionWbPath);
+      componentDistributionWb.write(fileOut);
       fileOut.close();
     } catch (Exception e) {
       e.printStackTrace();

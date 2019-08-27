@@ -1,6 +1,7 @@
 package de.tum.in.i4.fda;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -135,31 +136,30 @@ public class FAAnalyzer {
       return fmax.name + " with " + max;
     }
   }
-  
+
   public int medianFanIn() {
-    double [] inDependencies = new double[fa.features.size()];
+    double[] inDependencies = new double[fa.features.size()];
     Median median = new Median();
-    int i=0;
+    int i = 0;
     for (Feature f : fa.features) {
       Collection<Feature> dependentFeatures = getIncomingFeatures(f);
-      inDependencies[i]= dependentFeatures.size();
+      inDependencies[i] = dependentFeatures.size();
       i++;
     }
     return ((int) median.evaluate(inDependencies));
   }
-  
+
   public int medianFanOut() {
-    double [] outDependencies = new double[fa.features.size()];
+    double[] outDependencies = new double[fa.features.size()];
     Median median = new Median();
-    int i=0;
+    int i = 0;
     for (Feature f : fa.features) {
       Collection<Feature> dependentFeatures = getOutgoingFeatures(f);
-      outDependencies[i]= dependentFeatures.size();
+      outDependencies[i] = dependentFeatures.size();
       i++;
     }
     return ((int) median.evaluate(outDependencies));
   }
-
 
   public String avgFanIn() {
     int sum = 0;
@@ -352,8 +352,8 @@ public class FAAnalyzer {
         + numberOfFeaturesWithOutgoingDependencies());
     LOGGER.info("Number of features with in & out dependencies: "
         + numberOfFeaturesWithIncomingAndOutgoingDependencies());
-    LOGGER.info("Number of features without dependencies: "
-        + numberOfFeaturesWithoutDependencies());
+    LOGGER
+        .info("Number of features without dependencies: " + numberOfFeaturesWithoutDependencies());
     LOGGER.info("Feature with largest fan-in: " + largestFanIn());
     LOGGER.info("Feature with largest fan-out: " + largestFanOut());
     LOGGER.info("Average feature fan-in: " + avgFanIn());
@@ -421,7 +421,7 @@ public class FAAnalyzer {
     }
     return numberOfCommunalComponents;
   }
-  
+
   public int getNumberOfComponents() {
     return fa.components.size();
   }
@@ -610,11 +610,11 @@ public class FAAnalyzer {
       final Component target) {
 
     final AllDirectedPaths<Component, DefaultEdge> allPaths = new AllDirectedPaths<>(graph);
-    final List<GraphPath<Component, DefaultEdge>> paths = new IntNodeGraph<Component>(graph).getAllPaths(source, target);
-    
-    
+    final List<GraphPath<Component, DefaultEdge>> paths = new IntNodeGraph<Component>(graph)
+        .getAllPaths(source, target);
+
     final Collection<Collection<Feature>> featureInteractions = new HashSet<Collection<Feature>>();
-    
+
     LOGGER.info(
         "Number of paths between " + source.name + " and " + target.name + ": " + paths.size());
 
@@ -859,6 +859,114 @@ public class FAAnalyzer {
       }
     }
     return containingFeatures;
+  }
+
+  public void computePositionInFeature() {
+    for (Feature f : fa.features) {
+      LOGGER.info("Component distribution for feature: " + f.name);
+      calcComponentPositions(f);
+    }
+
+  }
+
+  public void printPositionData() {
+    for (Feature f : fa.features) {
+      LOGGER.info("Component distribution for feature: " + f.name);
+      for (Component c : f.getComponents()) {
+        LOGGER.info("Component: " + c.name + " ; Position: " + c.getInputPositionInFeature(f));
+      }
+    }
+
+  }
+
+  public void calcComponentPositions(Feature f) {
+    Collection<Component> components = fa.fcMapping.get(f);
+    for (Component c : components) {
+      calcLengthToInputs(f, c);
+      calcLengthToOutputs(f, c);
+    }
+  }
+
+  private void calcLengthToOutputs(Feature f, Component c) {
+    // the longest of the shortest paths to a feature output
+    int max = 0;
+    for (String out : f.getOutputs()) {
+      visited.clear();
+      int path = shortestPathToOutput(c, out, f);
+      if (path != Integer.MAX_VALUE) { // if there is actually a path to the current output
+        max = max < path ? path : max;
+      }
+    }
+    c.setOutputPositionInFeature(f, max);
+  }
+
+  private int shortestPathToOutput(Component c, String out, Feature f) {
+    int length = Integer.MAX_VALUE;
+    visited.add(c);
+    if (c.outputs.contains(out)) {
+      length = 1;
+    } else {
+      if (c.outputs.isEmpty()) {
+        length = Integer.MAX_VALUE;
+      } else {
+        for (Component post : f.getComponents()) {
+          if (!getSharedChannels(c, post).isEmpty() && !visited.contains(post)) {
+            // Set of unvisited successor components
+            int pathLength;
+            int postPathLength = shortestPathToOutput(post, out, f);
+            if (postPathLength == Integer.MAX_VALUE) {
+              pathLength = Integer.MAX_VALUE; // do not increase by one if already MAX
+            } else {
+              pathLength = postPathLength + 1;
+            }
+            length = pathLength < length ? pathLength : length;
+          }
+        }
+      }
+    }
+    return length;
+  }
+
+  private void calcLengthToInputs(Feature f, Component c) {
+    // the longest of the shortest paths to a feature input
+    int max = 0;
+    for (String in : f.getInputs()) {
+      visited.clear();
+      int path = shortestPathToInput(c, in, f);
+      if (path != Integer.MAX_VALUE) { // if there is actually a path to the current input
+        max = max < path ? path : max;
+      }
+    }
+    c.setInputPositionInFeature(f, max);
+  }
+
+  private Collection<Component> visited = new HashSet<Component>();
+
+  private int shortestPathToInput(Component c, String in, Feature f) {
+    int length = Integer.MAX_VALUE;
+    visited.add(c);
+    if (c.inputs.contains(in)) {
+      length = 1;
+    } else {
+      if (c.inputs.isEmpty()) {
+        length = Integer.MAX_VALUE;
+      } else {
+        for (Component pre : fa.fcMapping.get(f)) {
+          if (!getSharedChannels(pre, c).isEmpty() && !visited.contains(pre)) {
+            // Set of unvisited predecessor components
+            int pathLength;
+            int prePathLength = shortestPathToInput(pre, in, f);
+            if (prePathLength == Integer.MAX_VALUE) {
+              pathLength = Integer.MAX_VALUE; // do not increase by one if already MAX
+            } else {
+              pathLength = prePathLength + 1;
+            }
+            length = pathLength < length ? pathLength : length;
+          }
+        }
+      }
+    }
+    return length;
   }
 
 }
