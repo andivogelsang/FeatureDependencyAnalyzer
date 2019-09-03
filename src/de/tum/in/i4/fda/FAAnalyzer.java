@@ -1,5 +1,6 @@
 package de.tum.in.i4.fda;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -163,7 +164,7 @@ public class FAAnalyzer {
 
   public String avgFanIn() {
     int sum = 0;
-    int count = 0;
+    double count = 0;
     for (Feature f : fa.features) {
       Collection<Feature> dependentFeatures = getIncomingFeatures(f);
       sum += dependentFeatures.size();
@@ -174,7 +175,7 @@ public class FAAnalyzer {
 
   public String avgFanOut() {
     int sum = 0;
-    int count = 0;
+    double count = 0;
     for (Feature f : fa.features) {
       Collection<Feature> dependentFeatures = getOutgoingFeatures(f);
       sum += dependentFeatures.size();
@@ -356,11 +357,41 @@ public class FAAnalyzer {
         .info("Number of features without dependencies: " + numberOfFeaturesWithoutDependencies());
     LOGGER.info("Feature with largest fan-in: " + largestFanIn());
     LOGGER.info("Feature with largest fan-out: " + largestFanOut());
+    LOGGER.info("Feature with largest coupling: " + largestCoupling());
     LOGGER.info("Average feature fan-in: " + avgFanIn());
     LOGGER.info("Average feature fan-out: " + avgFanOut());
+    LOGGER.info("Average coupling: " + avgCoupling());
     LOGGER.info("Median feature fan-in: " + medianFanIn());
     LOGGER.info("Median feature fan-out: " + medianFanOut());
 
+  }
+
+  private String avgCoupling() {
+    int sum = 0;
+    double count = 0;
+    for (Feature f : fa.features) {
+      int coupling = getIncomingFeatures(f).size() + getOutgoingFeatures(f).size();
+      sum += coupling;
+      count++;
+    }
+    return "" + sum / count;
+  }
+
+  private String largestCoupling() {
+    int max = 0;
+    Feature fmax = null;
+    for (Feature f : fa.features) {
+      int coupling = getIncomingFeatures(f).size() + getOutgoingFeatures(f).size();
+      if (coupling > max) {
+        max = coupling;
+        fmax = f;
+      }
+    }
+    if (fmax == null) {
+      return "n/a";
+    } else {
+      return fmax.name + " with " + max;
+    }
   }
 
   public int numberOfFeaturesWithoutDependencies() {
@@ -435,19 +466,61 @@ public class FAAnalyzer {
   }
 
   public int getNumberOfDependencies(Component c) {
+    return getNumberOfIncomingDependencies(c) + getNumberOfOutgoingDependencies(c);
+  }
+
+  public int getNumberOfIncomingDependencies(Component c) {
     Collection<String> dependencies = new HashSet<String>();
     for (final FeatureDependency dep : fa.featureDependencies) {
       if (dep instanceof FirstOrderFeatureDependency) {
-        if (((FirstOrderFeatureDependency) dep).sourceComponent.equals(c)) {
-          dependencies.add(dep.sourceFeature + "->" + dep.targetFeature);
-        }
         if (((FirstOrderFeatureDependency) dep).targetComponent.equals(c)) {
-          dependencies.add(dep.targetFeature + "->" + dep.sourceFeature);
+          dependencies.add(dep.sourceFeature.name + "->" + dep.targetFeature.name);
         }
       }
     }
     return dependencies.size();
+  }
 
+  public int getNumberOfOutgoingDependencies(Component c) {
+    Collection<String> dependencies = new HashSet<String>();
+    for (final FeatureDependency dep : fa.featureDependencies) {
+      if (dep instanceof FirstOrderFeatureDependency) {
+        if (((FirstOrderFeatureDependency) dep).sourceComponent.equals(c)) {
+          dependencies.add(dep.sourceFeature.name + "->" + dep.targetFeature.name);
+        }
+      }
+    }
+    return dependencies.size();
+  }
+
+  public int getNumberOfDependencies(Component c, Feature f) {
+    return getNumberOfIncomingDependencies(c, f) + getNumberOfOutgoingDependencies(c, f);
+  }
+
+  public int getNumberOfIncomingDependencies(Component c, Feature f) {
+    Collection<String> dependencies = new HashSet<String>();
+    for (final FeatureDependency dep : fa.featureDependencies) {
+      if (dep instanceof FirstOrderFeatureDependency) {
+        if (((FirstOrderFeatureDependency) dep).targetComponent.equals(c)
+            && ((FirstOrderFeatureDependency) dep).targetFeature.equals(f)) {
+          dependencies.add(dep.sourceFeature.name + "->" + dep.targetFeature.name);
+        }
+      }
+    }
+    return dependencies.size();
+  }
+
+  public int getNumberOfOutgoingDependencies(Component c, Feature f) {
+    Collection<String> dependencies = new HashSet<String>();
+    for (final FeatureDependency dep : fa.featureDependencies) {
+      if (dep instanceof FirstOrderFeatureDependency) {
+        if (((FirstOrderFeatureDependency) dep).sourceComponent.equals(c)
+            && ((FirstOrderFeatureDependency) dep).sourceFeature.equals(f)) {
+          dependencies.add(dep.sourceFeature.name + "->" + dep.targetFeature.name);
+        }
+      }
+    }
+    return dependencies.size();
   }
 
   /**
@@ -967,6 +1040,41 @@ public class FAAnalyzer {
       }
     }
     return length;
+  }
+
+  public void computeCohesion() {
+    List<Double> cohesionValues = new ArrayList<Double>();
+    for (Feature f : fa.features) {
+      cohesionValues.add(computeCohesion(f));
+    }
+    LOGGER.info("Cohesion Max: " + Collections.max(cohesionValues));
+    LOGGER.info("Cohesion Min: " + Collections.min(cohesionValues));
+    double mean = cohesionValues.stream().mapToDouble(val -> val).average().orElse(0.0);
+    LOGGER.info("Cohesion Mean: " + mean);
+  }
+
+  private double computeCohesion(Feature f) {
+    Collection<Component> components = f.getComponents();
+    Collection<String> signals = f.getAllInputs();
+    signals.addAll(f.getAllOutputs());
+
+    double product = components.size() * signals.size();
+
+    int sigma = 0;
+    for (Component c : components) {
+      for (String s : signals) {
+        if (c.inputs.contains(s)) {
+          sigma++;
+        }
+      }
+    }
+
+    double cohesion = sigma / product;
+    f.cohesion = cohesion;
+    LOGGER.info("Cohesion for Feature " + f.name + ": " + cohesion + " (" + sigma + " / ("
+        + components.size() + " * " + signals.size() + "))");
+    return cohesion;
+
   }
 
 }

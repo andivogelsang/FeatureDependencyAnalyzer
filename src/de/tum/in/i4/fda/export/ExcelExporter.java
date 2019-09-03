@@ -69,6 +69,8 @@ public class ExcelExporter {
     componentPositionSheet.getRow(0).createCell(3).setCellValue("Length to Output");
     componentPositionSheet.getRow(0).createCell(4).setCellValue("Position in Feature");
     componentPositionSheet.getRow(0).createCell(5).setCellValue("Number of Dependencies");
+    componentPositionSheet.getRow(0).createCell(6).setCellValue("Number of Incoming Dependencies");
+    componentPositionSheet.getRow(0).createCell(7).setCellValue("Number of Outgoing Dependencies");
   }
 
   private void initializeTreeMapWb() {
@@ -322,7 +324,12 @@ public class ExcelExporter {
         Cell cell = componentPositionSheet.getRow(componentPositionSheetRow).createCell(4);
         cell.setCellValue(positionInFeature);
         cell.setCellStyle(percentStyle);
-        componentPositionSheet.getRow(componentPositionSheetRow).createCell(5).setCellValue(analyzer.getNumberOfDependencies(c));
+        componentPositionSheet.getRow(componentPositionSheetRow).createCell(5)
+            .setCellValue(analyzer.getNumberOfDependencies(c, f));
+        componentPositionSheet.getRow(componentPositionSheetRow).createCell(6)
+            .setCellValue(analyzer.getNumberOfIncomingDependencies(c, f));
+        componentPositionSheet.getRow(componentPositionSheetRow).createCell(7)
+            .setCellValue(analyzer.getNumberOfOutgoingDependencies(c, f));
       }
     }
 

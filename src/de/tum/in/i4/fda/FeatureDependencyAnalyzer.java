@@ -34,15 +34,24 @@ public class FeatureDependencyAnalyzer {
 		
 		
 		//Perform some analysis
+		performModularityAnalysis(analyzer,exporter);
+		
 		performFeatureDependencyAnalysis(analyzer,exporter);
 		
-		performComponentDistributionAnalysis(analyzer,exporter);
+		//performComponentDistributionAnalysis(analyzer,exporter);
+		
+		
 		
 		//performFIOrderAnalysis(analyzer,exporter);
 
-		performTDAnalysis(analyzer, exporter);
+		//performTDAnalysis(analyzer, exporter);
 
 	}
+
+  private static void performModularityAnalysis(FAAnalyzer analyzer, ExcelExporter exporter) {
+    analyzer.computeCohesion();
+    
+  }
 
   private static void performComponentDistributionAnalysis(FAAnalyzer analyzer,
       ExcelExporter exporter) {
@@ -99,9 +108,9 @@ public class FeatureDependencyAnalyzer {
 
 	private static void parseInputFile(FA fa, FAAnalyzer analyzer) {
 		//Parsing input file 
-		BMWParser parser = new BMWParser(fa);
+		//BMWParser parser = new BMWParser(fa);
 		//MANPhevosParser parser = new MANPhevosParser(fa);
-	  //BMW_AIDA_Parser parser = new BMW_AIDA_Parser(fa);
+	  BMW_AIDA_Parser parser = new BMW_AIDA_Parser(fa);
 		parser.parse();
 		
 		LOGGER.info("Number of Features: " + analyzer.numberOfFeatures());

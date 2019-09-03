@@ -13,6 +13,9 @@ public class FA {
   public Collection<Component> components;
   public Map<Feature, Collection<Component>> fcMapping;
   public Collection<FeatureDependency> featureDependencies;
+  
+  public double cohesion;
+  public double coupling;
 
   private Feature lastAddedFeature;
   private Component lastAddedComponent;

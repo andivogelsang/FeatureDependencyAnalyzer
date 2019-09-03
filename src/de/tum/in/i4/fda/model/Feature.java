@@ -16,6 +16,8 @@ public abstract class Feature {
   private Collection<String> outputs;
   private int eventChainLength = 0;
 
+  public double cohesion;
+
   public Feature(String name) {
     this.name = name;
   }
